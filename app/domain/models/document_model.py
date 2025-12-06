@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Tabl
 from sqlalchemy.orm import relationship
 from datetime import datetime
 # Import Base từ file database.py nằm ở thư mục gốc
-from core.database import Base
+from app.core.database import Base
 
 # Bảng trung gian cho quan hệ Many-to-Many (Self-referencing) của Topic
 # Dùng để lưu trữ các bài học liên quan (Tiêu chí tra cứu 3)
