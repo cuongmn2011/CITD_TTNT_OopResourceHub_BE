@@ -1,15 +1,36 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 
-# Tên file database sẽ là oop_resource.db nằm ngay thư mục gốc
-SQLALCHEMY_DATABASE_URL = "sqlite:///./oop_resource.db"
+# Load environment variables từ file .env (cho local development)
+load_dotenv()
 
-# connect_args={"check_same_thread": False} là BẮT BUỘC với SQLite trong FastAPI
-# vì SQLite mặc định chỉ cho phép 1 luồng truy cập tại 1 thời điểm
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+# Lấy DATABASE_URL từ environment variable (ưu tiên)
+# Nếu không có, sử dụng SQLite local (cho development)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./oop_resource.db")
+
+# Vercel Postgres cung cấp DATABASE_URL với prefix postgres://
+# SQLAlchemy 2.0+ yêu cầu postgresql:// thay vì postgres://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+# Cấu hình engine dựa trên loại database
+if DATABASE_URL.startswith("sqlite"):
+    # SQLite: connect_args cần thiết cho multi-threading trong FastAPI
+    engine = create_engine(
+        DATABASE_URL, 
+        connect_args={"check_same_thread": False}
+    )
+else:
+    # PostgreSQL: không cần connect_args đặc biệt
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,  # Kiểm tra connection trước khi sử dụng
+        pool_size=5,         # Số lượng connection trong pool
+        max_overflow=10      # Số connection tối đa có thể tạo thêm
+    )
 
 # Tạo SessionLocal
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
