@@ -1,8 +1,12 @@
 from mangum import Mangum
-from app.main import app as fastapi_app
 
-# Expose FastAPI app for ASGI-compatible runtimes
-app = fastapi_app
 
-# Wrap FastAPI app with Mangum for serverless compatibility
-handler = Mangum(fastapi_app, lifespan="off")
+def get_fastapi_app():
+	from app.main import app as _app
+	return _app
+
+
+app = get_fastapi_app()
+handler = Mangum(app, lifespan="off")
+
+__all__ = ("app", "handler")
