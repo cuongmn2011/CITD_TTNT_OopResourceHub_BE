@@ -1,9 +1,16 @@
+import os
 from fastapi import FastAPI
 from app.core.database import engine, Base
 from app.api.v1.endpoints import topic_api, category_api, section_api
 
-# Tạo bảng trong DB (chỉ chạy dev, product nên dùng Alembic migration)
-Base.metadata.create_all(bind=engine)
+# Chỉ tạo bảng tự động khi chạy local development
+# Production nên dùng Alembic migration hoặc tạo schema thủ công
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+if ENVIRONMENT == "development":
+    Base.metadata.create_all(bind=engine)
+    print(f"[{ENVIRONMENT}] Database tables created/verified")
+else:
+    print(f"[{ENVIRONMENT}] Skipping auto table creation")
 
 app = FastAPI(title="OOP Resource Hub API")
 
