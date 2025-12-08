@@ -1,6 +1,6 @@
 from typing import List, Optional
 from app.application.interfaces.topic_repository_interface import ITopicRepository
-from app.domain.models.document_model import Topic
+from app.domain.models import Topic
 from app.domain.schemas.topic_schema import TopicCreate, TopicResponse
 
 class TopicService:

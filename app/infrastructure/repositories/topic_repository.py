@@ -1,6 +1,6 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from app.domain.models.document_model import Topic, Section
+from app.domain.models import Topic, Section
 from app.domain.schemas.topic_schema import TopicCreate
 from app.application.interfaces.topic_repository_interface import ITopicRepository
 

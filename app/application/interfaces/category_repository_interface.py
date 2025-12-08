@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from app.domain.models.document_model import Category
+from app.domain.models import Category
 from app.domain.schemas.category_schema import CategoryCreate, CategoryUpdate
 
 class ICategoryRepository(ABC):

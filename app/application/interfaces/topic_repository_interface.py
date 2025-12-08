@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from app.domain.models.document_model import Topic
+from app.domain.models import Topic
 from app.domain.schemas.topic_schema import TopicCreate
 
 class ITopicRepository(ABC):
