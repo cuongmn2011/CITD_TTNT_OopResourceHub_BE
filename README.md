@@ -41,21 +41,27 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure database
+### 4. Configure environment
 
-**Local development (SQLite):**
-- Database tự động tạo file `oop_resource.db`
-- Không cần cấu hình gì thêm
-
-**Production (PostgreSQL):**
-- Copy file `.env.example` thành `.env`
-- Cập nhật `DATABASE_URL` với connection string của bạn:
-
+**Create `.env` file from example:**
 ```bash
 cp .env.example .env
-# Edit .env file
+```
+
+**Edit `.env` file:**
+```bash
+# Local development với SQLite (default)
+ENVIRONMENT=development
+# DATABASE_URL sẽ mặc định là sqlite:///./oop_resource.db
+
+# Hoặc dùng PostgreSQL local
+ENVIRONMENT=development
 DATABASE_URL=postgresql://username:password@localhost:5432/database_name
 ```
+
+**Note:** 
+- `ENVIRONMENT=development` tự động tạo bảng khi khởi động
+- `ENVIRONMENT=production` bỏ qua việc tạo bảng tự động
 
 ### 5. Run server
 
@@ -72,22 +78,51 @@ Server sẽ chạy tại: http://127.0.0.1:8000
 
 ```
 app/
-├── api/                    # API endpoints
+├── api/                           # API endpoints
 │   └── v1/endpoints/
-│       └── topic_api.py    # Topic CRUD APIs
-├── application/            # Business logic layer
-│   ├── interfaces/         # Repository interfaces
-│   └── services/           # Service layer
-├── domain/                 # Core business domain
-│   ├── models/             # Database models
-│   └── schemas/            # Pydantic schemas
-├── infrastructure/         # External services
-│   └── repositories/       # Data access layer
-└── core/                   # Core configuration
-    └── database.py         # Database setup
+│       ├── category_api.py        # Category CRUD APIs
+│       ├── topic_api.py           # Topic CRUD APIs
+│       └── section_api.py         # Section CRUD APIs
+├── application/                   # Business logic layer
+│   ├── interfaces/                # Repository interfaces (DIP)
+│   │   ├── category_repository_interface.py
+│   │   ├── topic_repository_interface.py
+│   │   └── section_repository_interface.py
+│   └── services/                  # Service layer
+│       ├── category_service.py
+│       ├── topic_service.py
+│       └── section_service.py
+├── domain/                        # Core business domain
+│   ├── models/                    # SQLAlchemy ORM models
+│   │   ├── category.py            # Category entity
+│   │   ├── topic.py               # Topic entity + related_topics
+│   │   ├── section.py             # Section entity
+│   │   └── __init__.py
+│   └── schemas/                   # Pydantic DTOs
+│       ├── category_schema.py
+│       ├── topic_schema.py
+│       └── section_schema.py
+├── infrastructure/                # External services
+│   └── repositories/              # Data access layer (SQLAlchemy)
+│       ├── category_repository.py
+│       ├── topic_repository.py
+│       └── section_repository.py
+└── core/                          # Core configuration
+    └── database.py                # Database setup
 ```
 
 ## 📡 API Endpoints
+
+### Categories
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/categories/` | Create new category |
+| GET | `/api/v1/categories/` | Get all categories (paginated) |
+| GET | `/api/v1/categories/{id}` | Get category by ID |
+| GET | `/api/v1/categories/slug/{slug}` | Get category by slug |
+| PUT | `/api/v1/categories/{id}` | Update category |
+| DELETE | `/api/v1/categories/{id}` | Delete category |
 
 ### Topics
 
@@ -99,6 +134,17 @@ app/
 | PUT | `/api/v1/topics/{id}` | Update topic |
 | DELETE | `/api/v1/topics/{id}` | Delete topic |
 
+### Sections
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/sections/` | Create new section |
+| GET | `/api/v1/sections/` | Get all sections (paginated) |
+| GET | `/api/v1/sections/{id}` | Get section by ID |
+| GET | `/api/v1/sections/topic/{topic_id}` | Get all sections of a topic |
+| PUT | `/api/v1/sections/{id}` | Update section |
+| DELETE | `/api/v1/sections/{id}` | Delete section |
+
 ## 🚢 Deployment
 
 ### Deploy to Vercel
@@ -108,13 +154,62 @@ app/
    - Choose Postgres
    - Copy `DATABASE_URL` environment variable
 
-2. **Add environment variable:**
+2. **Add environment variables:**
    - Go to Project Settings → Environment Variables
    - Add: `DATABASE_URL` = (your Postgres connection string)
+   - Add: `ENVIRONMENT` = `production`
 
-3. **Deploy:**
+3. **Create database tables (first time only):**
+   
+   **Option A - Temporary development mode:**
+   - Temporarily set `ENVIRONMENT=development` in Vercel
+   - Deploy once to auto-create tables
+   - Then change back to `ENVIRONMENT=production`
+   
+   **Option B - Manual SQL (recommended for production):**
+   - Connect to Vercel Postgres using psql or GUI client
+   - Run the following SQL:
+   ```sql
+   CREATE TABLE categories (
+       id SERIAL PRIMARY KEY,
+       name VARCHAR UNIQUE NOT NULL,
+       slug VARCHAR UNIQUE NOT NULL
+   );
+   
+   CREATE TABLE topics (
+       id SERIAL PRIMARY KEY,
+       title VARCHAR UNIQUE NOT NULL,
+       short_definition TEXT NOT NULL,
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       category_id INTEGER NOT NULL REFERENCES categories(id)
+   );
+   
+   CREATE TABLE sections (
+       id SERIAL PRIMARY KEY,
+       topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+       order_index INTEGER NOT NULL,
+       heading VARCHAR NOT NULL,
+       content TEXT NOT NULL,
+       image_url VARCHAR,
+       code_snippet TEXT,
+       language VARCHAR
+   );
+   
+   CREATE TABLE related_topics_association (
+       topic_id INTEGER REFERENCES topics(id),
+       related_topic_id INTEGER REFERENCES topics(id),
+       PRIMARY KEY (topic_id, related_topic_id)
+   );
+   
+   CREATE INDEX idx_categories_slug ON categories(slug);
+   CREATE INDEX idx_topics_title ON topics(title);
+   CREATE INDEX idx_topics_category ON topics(category_id);
+   CREATE INDEX idx_sections_topic ON sections(topic_id);
+   ```
+
+4. **Deploy:**
    ```bash
-   git push origin main
+   git push origin develop  # or main
    ```
 
 Vercel will automatically deploy your app!
@@ -148,9 +243,15 @@ pytest
 
 ## 📝 Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | Database connection string | `sqlite:///./oop_resource.db` |
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `ENVIRONMENT` | Runtime environment (`development`, `production`, `staging`) | `development` | No |
+| `DATABASE_URL` | Database connection string | `sqlite:///./oop_resource.db` | No |
+
+**Important Notes:**
+- `ENVIRONMENT=development`: Auto-creates database tables on startup (for local dev)
+- `ENVIRONMENT=production`: Skips auto table creation (requires manual schema setup or migrations)
+- When deploying to Vercel, set `ENVIRONMENT=production` in environment variables
 
 ## 🤝 Contributing
 
