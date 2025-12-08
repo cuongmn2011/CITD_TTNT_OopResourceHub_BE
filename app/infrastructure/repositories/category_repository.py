@@ -1,6 +1,6 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from app.domain.models.document_model import Category
+from app.domain.models import Category
 from app.domain.schemas.category_schema import CategoryCreate, CategoryUpdate
 from app.application.interfaces.category_repository_interface import ICategoryRepository
 
