@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Text
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.infrastructure.database import Base
 
 class Category(Base):
     """

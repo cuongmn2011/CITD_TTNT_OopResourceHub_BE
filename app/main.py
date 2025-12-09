@@ -1,6 +1,6 @@
 import os
 from fastapi import FastAPI
-from app.core.database import engine, Base
+from app.infrastructure.database import engine, Base
 from app.api.v1.endpoints import topic_api, category_api, section_api
 
 # Chỉ tạo bảng tự động khi chạy local development

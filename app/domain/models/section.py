@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from app.core.database import Base
+from app.infrastructure.database import Base
 
 class Section(Base):
     """
