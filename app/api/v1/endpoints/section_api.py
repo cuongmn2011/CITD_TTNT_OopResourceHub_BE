@@ -35,7 +35,15 @@ def create_section(
     - **code_snippet**: Đoạn code minh họa (optional)
     - **language**: Ngôn ngữ lập trình của code (optional)
     """
-    return service.create_section(section_data)
+    try:
+        return service.create_section(section_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi tạo section: {str(e)}"
+        )
 
 @router.get("/", response_model=List[SectionResponse])
 def get_all_sections(
@@ -49,7 +57,13 @@ def get_all_sections(
     - **skip**: Số lượng bản ghi bỏ qua (default: 0)
     - **limit**: Số lượng bản ghi tối đa trả về (default: 100)
     """
-    return service.get_all_sections(skip=skip, limit=limit)
+    try:
+        return service.get_all_sections(skip=skip, limit=limit)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lấy danh sách sections: {str(e)}"
+        )
 
 @router.get("/topic/{topic_id}", response_model=List[SectionResponse])
 def get_sections_by_topic(
@@ -61,7 +75,13 @@ def get_sections_by_topic(
     
     - **topic_id**: ID của Topic cần lấy sections
     """
-    return service.get_sections_by_topic(topic_id)
+    try:
+        return service.get_sections_by_topic(topic_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lấy sections của topic: {str(e)}"
+        )
 
 @router.get("/{section_id}", response_model=SectionResponse)
 def get_section_by_id(
@@ -73,7 +93,15 @@ def get_section_by_id(
     
     - **section_id**: ID của Section cần lấy
     """
-    return service.get_section_by_id(section_id)
+    try:
+        return service.get_section_by_id(section_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lấy section: {str(e)}"
+        )
 
 @router.put("/{section_id}", response_model=SectionResponse)
 def update_section(
@@ -94,7 +122,15 @@ def update_section(
     - **code_snippet**: Code snippet mới (optional)
     - **language**: Ngôn ngữ code mới (optional)
     """
-    return service.update_section(section_id, section_data)
+    try:
+        return service.update_section(section_id, section_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi cập nhật section: {str(e)}"
+        )
 
 @router.delete("/{section_id}", status_code=status.HTTP_200_OK)
 def delete_section(
@@ -106,4 +142,12 @@ def delete_section(
     
     - **section_id**: ID của Section cần xóa
     """
-    return service.delete_section(section_id)
+    try:
+        return service.delete_section(section_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi xóa section: {str(e)}"
+        )
