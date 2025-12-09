@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.domain.models import Topic, Section
 from app.domain.schemas.topic_schema import TopicCreate
 from app.application.interfaces.topic_repository_interface import ITopicRepository
@@ -37,12 +37,19 @@ class TopicRepository(ITopicRepository):
         return new_topic
     
     def get_by_id(self, topic_id: int) -> Optional[Topic]:
-        """Lấy topic theo ID"""
-        return self.db.query(Topic).filter(Topic.id == topic_id).first()
+        """Lấy topic theo ID với eager loading sections"""
+        return self.db.query(Topic)\
+            .options(joinedload(Topic.sections))\
+            .filter(Topic.id == topic_id)\
+            .first()
     
     def get_all(self, skip: int = 0, limit: int = 100) -> List[Topic]:
-        """Lấy danh sách topics với phân trang"""
-        return self.db.query(Topic).offset(skip).limit(limit).all()
+        """Lấy danh sách topics với phân trang và eager loading sections"""
+        return self.db.query(Topic)\
+            .options(joinedload(Topic.sections))\
+            .offset(skip)\
+            .limit(limit)\
+            .all()
     
     def update(self, topic_id: int, topic_data: TopicCreate) -> Optional[Topic]:
         """Cập nhật topic"""
