@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.core.database import get_db
+from app.infrastructure.database import get_db
 from app.domain.schemas.topic_schema import TopicCreate, TopicResponse
 from app.application.services.topic_service import TopicService
 from app.infrastructure.repositories.topic_repository import TopicRepository

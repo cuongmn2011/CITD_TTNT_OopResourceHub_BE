@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from app.core.database import Base
+from app.infrastructure.database import Base
 
 # Bảng phụ N-N cho quan hệ self-referencing giữa các Topic (related topics)
 related_topics_association = Table(
