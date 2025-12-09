@@ -40,7 +40,15 @@ class TopicService:
     def get_all_topics(self, skip: int = 0, limit: int = 100) -> List[TopicResponse]:
         """Lấy danh sách topics"""
         topics = self.topic_repo.get_all(skip, limit)
-        return [TopicResponse.model_validate(topic) for topic in topics]
+        result = []
+        for topic in topics:
+            try:
+                result.append(TopicResponse.model_validate(topic))
+            except Exception as e:
+                # Skip topics that fail validation (e.g., corrupted data)
+                print(f"Warning: Failed to validate topic {topic.id}: {str(e)}")
+                continue
+        return result
     
     def update_topic(self, topic_id: int, data: TopicCreate) -> Optional[TopicResponse]:
         """Cập nhật topic"""

@@ -1,24 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
-
-# --- Section Schemas ---
-class SectionBase(BaseModel):
-    heading: Optional[str] = None
-    content: Optional[str] = None
-    image_url: Optional[str] = None
-    code_snippet: Optional[str] = None
-    language: str = "python"
-    order_index: int = 0
-
-class SectionCreate(SectionBase):
-    pass
-
-class SectionResponse(SectionBase):
-    id: int
-    
-    class Config:
-        from_attributes = True # Pydantic v2 (dùng orm_mode = True nếu v1)
+from app.domain.schemas.section_schema import SectionCreate, SectionResponse
 
 # --- Topic Schemas ---
 class TopicBase(BaseModel):
