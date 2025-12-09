@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.infrastructure.database import get_db
 from app.domain.schemas.section_schema import SectionCreate, SectionUpdate, SectionResponse
 from app.application.services.section_service import SectionService
 from app.infrastructure.repositories.section_repository import SectionRepository

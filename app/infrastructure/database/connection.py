@@ -1,20 +1,15 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
+from app.core.settings import get_settings
 
 # Load environment variables từ file .env (cho local development)
 load_dotenv()
 
-# Lấy DATABASE_URL từ environment variable (ưu tiên)
-# Nếu không có, sử dụng SQLite local (cho development)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./oop_resource.db")
-
-# Vercel Postgres cung cấp DATABASE_URL với prefix postgres://
-# SQLAlchemy 2.0+ yêu cầu postgresql:// thay vì postgres://
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+# Get settings
+settings = get_settings()
+DATABASE_URL = settings.DATABASE_URL
 
 # Cấu hình engine dựa trên loại database
 if DATABASE_URL.startswith("sqlite"):

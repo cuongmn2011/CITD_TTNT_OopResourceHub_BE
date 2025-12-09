@@ -4,11 +4,13 @@ OopResourceHub is a dedicated web application designed to help students and deve
 
 ## 🚀 Tech Stack
 
-- **Framework**: FastAPI 0.123.8
-- **ORM**: SQLAlchemy 2.0.44
-- **Database**: SQLite (local) / PostgreSQL (production)
-- **Validation**: Pydantic v2
-- **Server**: Uvicorn
+- **Framework**: FastAPI 0.123.8 (async, high-performance)
+- **ORM**: SQLAlchemy 2.0.44 (with eager loading optimization)
+- **Database**: SQLite (local) / PostgreSQL (production via Vercel)
+- **Validation**: Pydantic v2 (type-safe schemas)
+- **Server**: Uvicorn (ASGI server)
+- **Architecture**: Clean Architecture with DIP (Dependency Inversion Principle)
+- **Deployment**: Vercel (serverless with Mangum adapter)
 
 ## 📦 Installation
 
@@ -78,7 +80,7 @@ Server sẽ chạy tại: http://127.0.0.1:8000
 
 ```
 app/
-├── api/                           # API endpoints
+├── api/                           # API endpoints layer
 │   └── v1/endpoints/
 │       ├── category_api.py        # Category CRUD APIs
 │       ├── topic_api.py           # Topic CRUD APIs
@@ -92,24 +94,57 @@ app/
 │       ├── category_service.py
 │       ├── topic_service.py
 │       └── section_service.py
+├── core/                          # Core application layer
+│   ├── __init__.py                # Core exports
+│   ├── settings.py                # App configuration & environment variables
+│   ├── exceptions.py              # Custom exception classes
+│   └── constants.py               # Application-wide constants
 ├── domain/                        # Core business domain
 │   ├── models/                    # SQLAlchemy ORM models
+│   │   ├── __init__.py            # Model exports
 │   │   ├── category.py            # Category entity
 │   │   ├── topic.py               # Topic entity + related_topics
-│   │   ├── section.py             # Section entity
-│   │   └── __init__.py
+│   │   └── section.py             # Section entity
 │   └── schemas/                   # Pydantic DTOs
-│       ├── category_schema.py
-│       ├── topic_schema.py
-│       └── section_schema.py
-├── infrastructure/                # External services
-│   └── repositories/              # Data access layer (SQLAlchemy)
-│       ├── category_repository.py
-│       ├── topic_repository.py
-│       └── section_repository.py
-└── core/                          # Core configuration
-    └── database.py                # Database setup
+│       ├── category_schema.py     # Category request/response schemas
+│       ├── topic_schema.py        # Topic request/response schemas
+│       └── section_schema.py      # Section request/response schemas
+└── infrastructure/                # External services & data access
+    ├── database/                  # Database configuration
+    │   ├── __init__.py            # Database exports
+    │   └── connection.py          # SQLAlchemy engine, session & Base
+    └── repositories/              # Data access layer (SQLAlchemy)
+        ├── category_repository.py
+        ├── topic_repository.py
+        └── section_repository.py
 ```
+
+### Architecture Principles
+
+**Clean Architecture Layers:**
+1. **API Layer** (`api/`) - HTTP endpoints, request/response handling
+2. **Application Layer** (`application/`) - Business logic, use cases
+3. **Domain Layer** (`domain/`) - Entities, value objects, business rules
+4. **Infrastructure Layer** (`infrastructure/`) - External concerns (DB, APIs)
+5. **Core Layer** (`core/`) - Cross-cutting concerns (config, exceptions)
+
+**Key Design Patterns:**
+- **Dependency Inversion Principle (DIP)**: Services depend on repository interfaces, not implementations
+- **Dependency Injection**: Repositories injected into services via constructors
+- **Repository Pattern**: Abstraction over data access
+- **Service Layer Pattern**: Business logic separated from controllers
+
+## ✨ Key Features
+
+- **RESTful API** with full CRUD operations
+- **Clean Architecture** with clear separation of concerns
+- **Dependency Inversion** using repository interfaces
+- **Comprehensive Error Handling** with detailed error messages
+- **Eager Loading** for optimized database queries (joinedload)
+- **Input Validation** using Pydantic v2 schemas
+- **Auto-generated API Documentation** (Swagger UI & ReDoc)
+- **Environment-based Configuration** (development/production)
+- **Database Agnostic** (SQLite for dev, PostgreSQL for prod)
 
 ## 📡 API Endpoints
 
@@ -222,6 +257,20 @@ Vercel will automatically deploy your app!
 
 ## 🔧 Development
 
+### Error Handling
+
+All API endpoints include comprehensive error handling:
+
+- **404 Not Found**: Resource không tồn tại
+- **400 Bad Request**: Validation errors, duplicate resources
+- **422 Unprocessable Entity**: Business logic validation failures
+- **500 Internal Server Error**: Unexpected errors (with detailed messages in response)
+
+Custom exceptions are defined in `app/core/exceptions.py`:
+- `ResourceNotFoundException`
+- `DuplicateResourceException`
+- `ValidationException`
+
 ### Database Migrations (Future)
 
 Consider using Alembic for production migrations:
@@ -252,6 +301,8 @@ pytest
 - `ENVIRONMENT=development`: Auto-creates database tables on startup (for local dev)
 - `ENVIRONMENT=production`: Skips auto table creation (requires manual schema setup or migrations)
 - When deploying to Vercel, set `ENVIRONMENT=production` in environment variables
+- Settings are centrally managed in `app/core/settings.py` using the Settings class
+- Use `get_settings()` function to access configuration throughout the application
 
 ## 🤝 Contributing
 

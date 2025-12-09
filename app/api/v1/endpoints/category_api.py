@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.core.database import get_db
+from app.infrastructure.database import get_db
 from app.domain.schemas.category_schema import CategoryCreate, CategoryUpdate, CategoryResponse
 from app.application.services.category_service import CategoryService
 from app.infrastructure.repositories.category_repository import CategoryRepository
