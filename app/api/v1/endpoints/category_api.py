@@ -28,7 +28,15 @@ def create_category(
     - **name**: Tên category (VD: Khái niệm, Tính chất, Bài tập...)
     - **slug**: Slug chuẩn hóa (VD: khai-niem, tinh-chat, bai-tap...)
     """
-    return service.create_category(category_in)
+    try:
+        return service.create_category(category_in)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi tạo category: {str(e)}"
+        )
 
 @router.get("/{category_id}", response_model=CategoryResponse)
 def get_category(
@@ -36,13 +44,21 @@ def get_category(
     service: CategoryService = Depends(get_category_service)
 ):
     """Lấy thông tin chi tiết một category"""
-    category = service.get_category_by_id(category_id)
-    if not category:
+    try:
+        category = service.get_category_by_id(category_id)
+        if not category:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail=f"Category với ID {category_id} không tồn tại"
+            )
+        return category
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"Category với ID {category_id} không tồn tại"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lấy category: {str(e)}"
         )
-    return category
 
 @router.get("/", response_model=List[CategoryResponse])
 def get_categories(
@@ -51,7 +67,13 @@ def get_categories(
     service: CategoryService = Depends(get_category_service)
 ):
     """Lấy danh sách categories với phân trang"""
-    return service.get_all_categories(skip=skip, limit=limit)
+    try:
+        return service.get_all_categories(skip=skip, limit=limit)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lấy danh sách categories: {str(e)}"
+        )
 
 @router.put("/{category_id}", response_model=CategoryResponse)
 def update_category(
@@ -60,13 +82,21 @@ def update_category(
     service: CategoryService = Depends(get_category_service)
 ):
     """Cập nhật category"""
-    category = service.update_category(category_id, category_in)
-    if not category:
+    try:
+        category = service.update_category(category_id, category_in)
+        if not category:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Category với ID {category_id} không tồn tại"
+            )
+        return category
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Category với ID {category_id} không tồn tại"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi cập nhật category: {str(e)}"
         )
-    return category
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_category(
@@ -74,10 +104,18 @@ def delete_category(
     service: CategoryService = Depends(get_category_service)
 ):
     """Xóa category"""
-    success = service.delete_category(category_id)
-    if not success:
+    try:
+        success = service.delete_category(category_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Category với ID {category_id} không tồn tại"
+            )
+        return None
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Category với ID {category_id} không tồn tại"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi xóa category: {str(e)}"
         )
-    return None

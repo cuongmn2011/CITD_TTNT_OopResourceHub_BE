@@ -41,13 +41,21 @@ def get_topic(
     service: TopicService = Depends(get_topic_service)
 ):
     """Lấy thông tin chi tiết một topic"""
-    topic = service.get_topic_by_id(topic_id)
-    if not topic:
+    try:
+        topic = service.get_topic_by_id(topic_id)
+        if not topic:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, 
+                detail=f"Topic với ID {topic_id} không tồn tại"
+            )
+        return topic
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail=f"Topic với ID {topic_id} không tồn tại"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lấy topic: {str(e)}"
         )
-    return topic
 
 @router.get("/", response_model=List[TopicResponse])
 def get_topics(
@@ -56,7 +64,13 @@ def get_topics(
     service: TopicService = Depends(get_topic_service)
 ):
     """Lấy danh sách topics với phân trang"""
-    return service.get_all_topics(skip=skip, limit=limit)
+    try:
+        return service.get_all_topics(skip=skip, limit=limit)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi lấy danh sách topics: {str(e)}"
+        )
 
 @router.put("/{topic_id}", response_model=TopicResponse)
 def update_topic(
@@ -65,13 +79,21 @@ def update_topic(
     service: TopicService = Depends(get_topic_service)
 ):
     """Cập nhật topic"""
-    topic = service.update_topic(topic_id, topic_in)
-    if not topic:
+    try:
+        topic = service.update_topic(topic_id, topic_in)
+        if not topic:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Topic với ID {topic_id} không tồn tại"
+            )
+        return topic
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Topic với ID {topic_id} không tồn tại"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi cập nhật topic: {str(e)}"
         )
-    return topic
 
 @router.delete("/{topic_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_topic(
@@ -79,10 +101,18 @@ def delete_topic(
     service: TopicService = Depends(get_topic_service)
 ):
     """Xóa topic"""
-    success = service.delete_topic(topic_id)
-    if not success:
+    try:
+        success = service.delete_topic(topic_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Topic với ID {topic_id} không tồn tại"
+            )
+        return None
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Topic với ID {topic_id} không tồn tại"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Lỗi khi xóa topic: {str(e)}"
         )
-    return None
