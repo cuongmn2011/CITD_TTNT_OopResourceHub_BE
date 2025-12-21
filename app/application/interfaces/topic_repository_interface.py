@@ -75,3 +75,14 @@ class ITopicRepository(ABC):
             bool: True nếu xóa thành công, False nếu không tìm thấy
         """
         pass
+    
+    @abstractmethod
+    def get_all_with_minimal_data(self) -> List[Topic]:
+        """
+        Lấy tất cả topics với dữ liệu tối thiểu (không load sections).
+        Dùng cho việc tính toán related topics.
+        
+        Returns:
+            List[Topic]: Danh sách tất cả topics
+        """
+        pass

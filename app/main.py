@@ -1,7 +1,9 @@
 import os
+
 from fastapi import FastAPI
-from app.infrastructure.database import engine, Base
-from app.api.v1.endpoints import topic_api, category_api, section_api
+
+from app.api.v1.endpoints import category_api, section_api, topic_api
+from app.infrastructure.database import Base, engine
 
 # Chỉ tạo bảng tự động khi chạy local development
 # Production nên dùng Alembic migration hoặc tạo schema thủ công
@@ -16,8 +18,11 @@ app = FastAPI(title="OOP Resource Hub API")
 
 # Đăng ký Router
 app.include_router(topic_api.router, prefix="/api/v1/topics", tags=["Topics"])
-app.include_router(category_api.router, prefix="/api/v1/categories", tags=["Categories"])
+app.include_router(
+    category_api.router, prefix="/api/v1/categories", tags=["Categories"]
+)
 app.include_router(section_api.router, prefix="/api/v1/sections", tags=["Sections"])
+
 
 @app.get("/")
 def root():
