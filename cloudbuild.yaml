@@ -23,7 +23,7 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--update-secrets'
-      - 'DATABASE_URL=DATABASE_URL:latest'
+      - 'DATABASE_URL=DATABASE_URL:2'
       - '--set-env-vars'
       - 'ENVIRONMENT=production'
 
