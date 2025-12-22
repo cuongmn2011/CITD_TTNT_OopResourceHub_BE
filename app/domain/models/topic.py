@@ -1,20 +1,24 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Table
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table, Text
+from sqlalchemy.orm import relationship
+
 from app.infrastructure.database import Base
 
 # Bảng phụ N-N cho quan hệ self-referencing giữa các Topic (related topics)
 related_topics_association = Table(
-    'related_topics_association',
+    "related_topics_association",
     Base.metadata,
-    Column('topic_id', Integer, ForeignKey('topics.id'), primary_key=True),
-    Column('related_topic_id', Integer, ForeignKey('topics.id'), primary_key=True)
+    Column("topic_id", Integer, ForeignKey("topics.id"), primary_key=True),
+    Column("related_topic_id", Integer, ForeignKey("topics.id"), primary_key=True),
 )
+
 
 class Topic(Base):
     """
     Chủ đề chính OOP (Tiêu chí tra cứu 1: Class, Object, Inheritance, Polymorphism...)
     """
+
     __tablename__ = "topics"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -29,7 +33,9 @@ class Topic(Base):
     category = relationship("Category", back_populates="topics")
 
     # Quan hệ 1-N: Một Topic có nhiều Sections
-    sections = relationship("Section", back_populates="topic", cascade="all, delete-orphan")
+    sections = relationship(
+        "Section", back_populates="topic", cascade="all, delete-orphan"
+    )
 
     # Quan hệ N-N tự tham chiếu: Các Topics liên quan
     related_topics = relationship(
@@ -37,5 +43,5 @@ class Topic(Base):
         secondary=related_topics_association,
         primaryjoin=id == related_topics_association.c.topic_id,
         secondaryjoin=id == related_topics_association.c.related_topic_id,
-        backref="related_by"
+        backref="related_by",
     )
