@@ -26,4 +26,8 @@ app.include_router(section_api.router, prefix="/api/v1/sections", tags=["Section
 
 @app.get("/")
 def root():
-    return {"message": "Server is running..."}
+    return {
+        "message": "OOP Resource Hub API is running successfully!",
+        "version": "1.0.0",
+        "docs": "/docs"
+    }
