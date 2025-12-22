@@ -86,4 +86,7 @@ class TopicRepository(ITopicRepository):
         
         self.db.delete(topic)
         self.db.commit()
-        return True
+        return True    
+    def get_all_with_minimal_data(self) -> List[Topic]:
+        """Lấy tất cả topics không load sections (dùng cho việc tính toán related topics)"""
+        return self.db.query(Topic).all()
