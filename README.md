@@ -6,11 +6,11 @@ OopResourceHub is a dedicated web application designed to help students and deve
 
 - **Framework**: FastAPI 0.123.8 (async, high-performance)
 - **ORM**: SQLAlchemy 2.0.44 (with eager loading optimization)
-- **Database**: SQLite (local) / PostgreSQL (production via Vercel)
+- **Database**: PostgreSQL (Neon Database)
 - **Validation**: Pydantic v2 (type-safe schemas)
 - **Server**: Uvicorn (ASGI server)
 - **Architecture**: Clean Architecture with DIP (Dependency Inversion Principle)
-- **Deployment**: Vercel (serverless with Mangum adapter)
+- **Deployment**: Google Cloud Run (containerized deployment)
 
 ## 📦 Installation
 
@@ -45,36 +45,57 @@ pip install -r requirements.txt
 
 ### 4. Configure environment
 
-**Create `.env` file from example:**
+**Create `.env` file:**
 ```bash
 cp .env.example .env
 ```
 
-**Edit `.env` file:**
+**Edit `.env` file with your Neon PostgreSQL credentials:**
 ```bash
-# Local development với SQLite (default)
 ENVIRONMENT=development
-# DATABASE_URL sẽ mặc định là sqlite:///./oop_resource.db
-
-# Hoặc dùng PostgreSQL local
-ENVIRONMENT=development
-DATABASE_URL=postgresql://username:password@localhost:5432/database_name
+DATABASE_URL=postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
 ```
 
+**Get Neon Database URL:**
+1. Sign up at [Neon](https://neon.tech)
+2. Create a new project
+3. Copy the connection string from dashboard
+4. Paste it into your `.env` file
+
 **Note:** 
-- `ENVIRONMENT=development` tự động tạo bảng khi khởi động
-- `ENVIRONMENT=production` bỏ qua việc tạo bảng tự động
+- Database URL is **required** - the application will not start without it
+- Both development and production use PostgreSQL (no SQLite support)
 
 ### 5. Run server
 
+**Windows (PowerShell):**
+```powershell
+# Set environment variables and run
+$env:DATABASE_URL="postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require"
+$env:ENVIRONMENT="development"
+python run.py
+```
+
+**Linux/Mac:**
 ```bash
-python -m run
+# Option 1: Export then run
+export DATABASE_URL="postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require"
+export ENVIRONMENT="development"
+python run.py
+
+# Option 2: Use python-dotenv (automatically loads .env file)
+python run.py
 ```
 
 Server sẽ chạy tại: http://127.0.0.1:8000
 
 - API Documentation: http://127.0.0.1:8000/docs
 - Alternative docs: http://127.0.0.1:8000/redoc
+
+**Note:** 
+- Make sure your `.env` file exists and contains valid DATABASE_URL
+- The app uses `python-dotenv` to automatically load `.env` file on startup
+- If you see "DATABASE_URL environment variable is required!" error, check your `.env` file
 
 ## 🏗️ Project Structure
 
@@ -144,7 +165,8 @@ app/
 - **Input Validation** using Pydantic v2 schemas
 - **Auto-generated API Documentation** (Swagger UI & ReDoc)
 - **Environment-based Configuration** (development/production)
-- **Database Agnostic** (SQLite for dev, PostgreSQL for prod)
+- **PostgreSQL Database** with connection pooling for production workloads
+- **Auto Database Schema Creation** on first startup
 
 ## 📡 API Endpoints
 
@@ -182,78 +204,74 @@ app/
 
 ## 🚢 Deployment
 
-### Deploy to Vercel
+### Deploy to Google Cloud Run
 
-1. **Create Vercel Postgres database:**
-   - Go to Vercel Dashboard → Storage → Create Database
-   - Choose Postgres
-   - Copy `DATABASE_URL` environment variable
+**Prerequisites:**
+- Google Cloud SDK installed
+- Docker (optional - only needed for local Docker builds)
+- Google Cloud project with billing enabled
 
-2. **Add environment variables:**
-   - Go to Project Settings → Environment Variables
-   - Add: `DATABASE_URL` = (your Postgres connection string)
-   - Add: `ENVIRONMENT` = `production`
+**Quick Deploy:**
 
-3. **Create database tables (first time only):**
-   
-   **Option A - Temporary development mode:**
-   - Temporarily set `ENVIRONMENT=development` in Vercel
-   - Deploy once to auto-create tables
-   - Then change back to `ENVIRONMENT=production`
-   
-   **Option B - Manual SQL (recommended for production):**
-   - Connect to Vercel Postgres using psql or GUI client
-   - Run the following SQL:
-   ```sql
-   CREATE TABLE categories (
-       id SERIAL PRIMARY KEY,
-       name VARCHAR UNIQUE NOT NULL,
-       slug VARCHAR UNIQUE NOT NULL
-   );
-   
-   CREATE TABLE topics (
-       id SERIAL PRIMARY KEY,
-       title VARCHAR UNIQUE NOT NULL,
-       short_definition TEXT NOT NULL,
-       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-       category_id INTEGER NOT NULL REFERENCES categories(id)
-   );
-   
-   CREATE TABLE sections (
-       id SERIAL PRIMARY KEY,
-       topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
-       order_index INTEGER NOT NULL,
-       heading VARCHAR NOT NULL,
-       content TEXT NOT NULL,
-       image_url VARCHAR,
-       code_snippet TEXT,
-       language VARCHAR
-   );
-   
-   CREATE TABLE related_topics_association (
-       topic_id INTEGER REFERENCES topics(id),
-       related_topic_id INTEGER REFERENCES topics(id),
-       PRIMARY KEY (topic_id, related_topic_id)
-   );
-   
-   CREATE INDEX idx_categories_slug ON categories(slug);
-   CREATE INDEX idx_topics_title ON topics(title);
-   CREATE INDEX idx_topics_category ON topics(category_id);
-   CREATE INDEX idx_sections_topic ON sections(topic_id);
-   ```
-
-4. **Deploy:**
+1. **Setup Google Cloud:**
    ```bash
-   git push origin develop  # or main
+   # Login to Google Cloud
+   gcloud auth login
+   
+   # Set your project
+   gcloud config set project YOUR_PROJECT_ID
+   
+   # Enable required APIs
+   gcloud services enable run.googleapis.com
+   gcloud services enable cloudbuild.googleapis.com
    ```
 
-Vercel will automatically deploy your app!
+2. **Deploy using the deployment script:**
+   
+   **Windows (PowerShell):**
+   ```powershell
+   .\deploy.ps1
+   ```
+   
+   **Linux/Mac:**
+   ```bash
+   bash deploy.sh
+   ```
+   
+   Or deploy manually:
+   ```bash
+   gcloud run deploy oopresourcehub-api \
+     --source . \
+     --region asia-southeast1 \
+     --allow-unauthenticated \
+     --port 8000 \
+     --set-env-vars ENVIRONMENT=production,DATABASE_URL="your_neon_database_url"
+   ```
 
-### Alternative Platforms
+3. **Access your deployed API:**
+   ```bash
+   # Get service URL
+   gcloud run services describe oopresourcehub-api \
+     --region asia-southeast1 \
+     --format='value(status.url)'
+   ```
 
-- **Render.com**: Great for Python backends, free tier available
-- **Railway.app**: Easy setup with automatic PostgreSQL
-- **Heroku**: Classic choice with managed Postgres
+**Important Notes:**
+- Database tables are automatically created on first startup
+- Use Neon PostgreSQL for production database
+- `deploy.ps1` and `deploy.sh` files contain your database credentials and are git-ignored
+- See `DEPLOY_MANUAL.md` for detailed deployment instructions
+
+### Database Setup
+
+**Using Neon PostgreSQL (Recommended):**
+
+1. Create account at [Neon](https://neon.tech)
+2. Create a new project and database
+3. Copy the connection string
+4. Use it in your deployment command or `.env` file
+
+Database tables are automatically created when the application starts for the first time.
 
 ## 🔧 Development
 
@@ -295,14 +313,26 @@ pytest
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `ENVIRONMENT` | Runtime environment (`development`, `production`, `staging`) | `development` | No |
-| `DATABASE_URL` | Database connection string | `sqlite:///./oop_resource.db` | No |
+| `DATABASE_URL` | PostgreSQL connection string | None | **Yes** |
 
 **Important Notes:**
-- `ENVIRONMENT=development`: Auto-creates database tables on startup (for local dev)
-- `ENVIRONMENT=production`: Skips auto table creation (requires manual schema setup or migrations)
-- When deploying to Vercel, set `ENVIRONMENT=production` in environment variables
+- `DATABASE_URL` is **required** - application will fail to start without it
+- Use Neon PostgreSQL for both development and production
+- Database tables are automatically created on first startup
 - Settings are centrally managed in `app/core/settings.py` using the Settings class
 - Use `get_settings()` function to access configuration throughout the application
+
+**Example DATABASE_URL formats:**
+```bash
+# Neon PostgreSQL (recommended)
+DATABASE_URL=postgresql://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require
+
+# Local PostgreSQL
+DATABASE_URL=postgresql://username:password@localhost:5432/database_name
+
+# Google Cloud SQL
+DATABASE_URL=postgresql://user:password@/dbname?host=/cloudsql/project:region:instance
+```
 
 ## 🤝 Contributing
 
