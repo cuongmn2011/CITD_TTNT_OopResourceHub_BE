@@ -11,21 +11,13 @@ load_dotenv()
 settings = get_settings()
 DATABASE_URL = settings.DATABASE_URL
 
-# Cấu hình engine dựa trên loại database
-if DATABASE_URL.startswith("sqlite"):
-    # SQLite: connect_args cần thiết cho multi-threading trong FastAPI
-    engine = create_engine(
-        DATABASE_URL, 
-        connect_args={"check_same_thread": False}
-    )
-else:
-    # PostgreSQL: không cần connect_args đặc biệt
-    engine = create_engine(
-        DATABASE_URL,
-        pool_pre_ping=True,  # Kiểm tra connection trước khi sử dụng
-        pool_size=5,         # Số lượng connection trong pool
-        max_overflow=10      # Số connection tối đa có thể tạo thêm
-    )
+# PostgreSQL engine configuration
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,  # Kiểm tra connection trước khi sử dụng
+    pool_size=5,         # Số lượng connection trong pool
+    max_overflow=10      # Số connection tối đa có thể tạo thêm
+)
 
 # Tạo SessionLocal
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
