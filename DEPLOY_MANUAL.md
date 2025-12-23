@@ -31,17 +31,34 @@ gcloud services enable artifactregistry.googleapis.com
 
 ## Bước 4: Deploy lên Cloud Run
 
-### Cách 1: Deploy trực tiếp từ source code (Khuyến nghị)
+### Cách 1: Sử dụng script deploy (Đơn giản nhất - Khuyến nghị)
+
+File deploy script đã được tạo sẵn với cấu hình database và biến môi trường.
+
+**Trên Windows PowerShell:**
+```powershell
+.\deploy.ps1
+```
+
+**Trên Linux/Mac:**
+```bash
+bash deploy.sh
+```
+
+> **Lưu ý:** File `deploy.ps1` và `deploy.sh` không được commit lên git vì chứa thông tin database nhạy cảm.
+
+### Cách 2: Deploy trực tiếp từ source code (Manual)
 
 ```bash
 gcloud run deploy oopresourcehub-api \
   --source . \
   --region asia-southeast1 \
   --allow-unauthenticated \
-  --port 8000
+  --port 8000 \
+  --set-env-vars ENVIRONMENT=production,DATABASE_URL="your_database_connection_string"
 ```
 
-### Cách 2: Build Docker image và deploy
+### Cách 3: Build Docker image và deploy
 
 #### Bước 4.1: Build và push Docker image
 
@@ -69,10 +86,14 @@ gcloud run deploy oopresourcehub-api \
   --image asia-southeast1-docker.pkg.dev/YOUR_PROJECT_ID/oopresourcehub-repo/api:latest \
   --region asia-southeast1 \
   --allow-unauthenticated \
-  --port 8000
+  --port 8000 \
+  --set-env-vars ENVIRONMENT=production,DATABASE_URL="your_database_connection_string"
 ```
 
-## Bước 5: Cấu hình biến môi trường (nếu cần)
+## Bước 5: Cấu hình biến môi trường
+
+### Nếu đã deploy bằng deploy.sh
+Biến môi trường đã được cấu hình tự động. Nếu cần thay đổi:
 
 ```bash
 gcloud run services update oopresourcehub-api \
@@ -121,11 +142,12 @@ gcloud run services update oopresourcehub-api \
 
 ## Lưu ý
 
-1. **Region**: Đang sử dụng `asia-southeast1` (Singapore), có thể đổi sang region khác nếu cần
-2. **Port**: Ứng dụng FastAPI chạy trên port 8000
-3. **Authentication**: Đang để `--allow-unauthenticated` để public, xóa flag này nếu muốn yêu cầu xác thực
-4. **Database**: Nhớ cấu hình DATABASE_URL và các biến môi trường khác qua `--update-env-vars`
-5. **Cost**: Cloud Run tính phí theo usage, cân nhắc thiết lập min/max instances phù hợp
+1. **deploy.ps1/deploy.sh**: File script này chứa database connection string và không được commit lên git. Nếu làm việc nhóm, mỗi người cần tạo file riêng với thông tin database của mình.
+2. **Region**: Đang sử dụng `asia-southeast1` (Singapore), có thể đổi sang region khác nếu cần
+3. **Port**: Ứng dụng FastAPI chạy trên port 8000
+4. **Authentication**: Đang để `--allow-unauthenticated` để public, xóa flag này nếu muốn yêu cầu xác thực
+5. **Database**: Connection string được cấu hình trong file deploy script hoặc qua `--set-env-vars`
+6. **Cost**: Cloud Run tính phí theo usage, cân nhắc thiết lập min/max instances phù hợp
 
 ## Troubleshooting
 
