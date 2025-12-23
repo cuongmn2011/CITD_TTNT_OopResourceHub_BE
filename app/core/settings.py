@@ -5,6 +5,10 @@ Uses pydantic-settings for environment variable management.
 import os
 from functools import lru_cache
 from typing import Literal
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Settings:
     """Application settings loaded from environment variables"""
