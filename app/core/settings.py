@@ -13,7 +13,7 @@ class Settings:
     ENVIRONMENT: Literal["development", "production"] = os.getenv("ENVIRONMENT", "development")
     
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./oop_resource.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     
     # API
     API_V1_PREFIX: str = "/api/v1"
@@ -31,6 +31,10 @@ class Settings:
     MAX_PAGE_SIZE: int = 1000
     
     def __init__(self):
+        # Require DATABASE_URL in production
+        if not self.DATABASE_URL:
+            raise ValueError("DATABASE_URL environment variable is required!")
+            
         # Convert postgres:// to postgresql:// for SQLAlchemy 2.0
         if self.DATABASE_URL.startswith("postgres://"):
             self.DATABASE_URL = self.DATABASE_URL.replace("postgres://", "postgresql://", 1)
