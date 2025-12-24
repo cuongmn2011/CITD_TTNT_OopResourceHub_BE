@@ -52,6 +52,18 @@ class TopicService:
                 print(f"Warning: Failed to validate topic {topic.id}: {str(e)}")
                 continue
         return result
+    
+    def get_topics_by_category(self, category_id: int, skip: int = 0, limit: int = 100) -> List[TopicResponse]:
+        """Lấy danh sách topics theo category (lightweight)"""
+        topics = self.topic_repo.get_by_category(category_id, skip, limit)
+        result = []
+        for topic in topics:
+            try:
+                result.append(TopicResponse.model_validate(topic))
+            except Exception as e:
+                print(f"Warning: Failed to validate topic {topic.id}: {str(e)}")
+                continue
+        return result
 
     def update_topic(self, topic_id: int, data: TopicCreate) -> Optional[TopicResponse]:
         """Cập nhật topic"""

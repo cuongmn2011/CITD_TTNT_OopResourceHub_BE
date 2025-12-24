@@ -11,11 +11,25 @@ class TopicBase(BaseModel):
 
 class TopicCreate(TopicBase):
     sections: List[SectionCreate] = [] # Cho phép tạo luôn section khi tạo topic
+    tag_ids: List[int] = []  # Danh sách tag IDs khi tạo topic
+
+class TopicListItem(TopicBase):
+    """Lightweight schema for topic list - no sections/tags"""
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 class TopicResponse(TopicBase):
     id: int
     created_at: datetime
     sections: List[SectionResponse] = []
+    tags: List['TagResponse'] = []  # Danh sách tags của topic
 
     class Config:
         from_attributes = True
+
+# Import để avoid circular dependency
+from app.domain.schemas.tag_schema import TagResponse
+TopicResponse.model_rebuild()

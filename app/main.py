@@ -2,7 +2,7 @@ import os
 
 from fastapi import FastAPI
 
-from app.api.v1.endpoints import category_api, section_api, topic_api, related_topic_association
+from app.api.v1.endpoints import category_api, section_api, topic_api, search_api, tag_api, related_topic_association
 from app.infrastructure.database import Base, engine
 
 # Chỉ tạo bảng tự động khi chạy local development
@@ -22,9 +22,9 @@ app.include_router(
     category_api.router, prefix="/api/v1/categories", tags=["Categories"]
 )
 app.include_router(section_api.router, prefix="/api/v1/sections", tags=["Sections"])
-app.include_router(
-    related_topic_association.router, prefix="/api/v1/related-topics", tags=["Related Topics"]
-)
+app.include_router(search_api.router, prefix="/api/v1/search", tags=["Search"])
+app.include_router(tag_api.router, prefix="/api/v1/tags", tags=["Tags"])
+app.include_router(related_topic_association.router, prefix="/api/v1/related-topics", tags=["Related Topics"])
 
 
 @app.get("/")
