@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.application.services.topic_service import TopicService
-from app.domain.schemas.topic_schema import TopicCreate, TopicResponse
+from app.domain.schemas.topic_schema import TopicCreate, TopicResponse, TopicListItem
 from app.infrastructure.database import get_db
 from app.infrastructure.repositories.topic_repository import TopicRepository
 
@@ -47,13 +47,20 @@ def get_topic(topic_id: int, service: TopicService = Depends(get_topic_service))
         )
 
 
-@router.get("/", response_model=List[TopicResponse])
+@router.get("/", response_model=List[TopicListItem])
 def get_topics(
-    skip: int = 0, limit: int = 100, service: TopicService = Depends(get_topic_service)
+    category_id: int = Query(None, description="Filter topics by category ID"),
+    skip: int = 0, 
+    limit: int = 100, 
+    service: TopicService = Depends(get_topic_service)
 ):
-    """Lấy danh sách topics với phân trang"""
+    """Lấy danh sách topics (lightweight - không bao gồm sections/tags) với filter theo category"""
     try:
-        return service.get_all_topics(skip=skip, limit=limit)
+        if category_id:
+            topics = service.get_topics_by_category(category_id, skip=skip, limit=limit)
+        else:
+            topics = service.get_all_topics(skip=skip, limit=limit)
+        return topics
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -13,6 +13,9 @@ related_topics_association = Table(
     Column("related_topic_id", Integer, ForeignKey("topics.id"), primary_key=True),
 )
 
+# Import topic_tags từ tag.py
+from app.domain.models.tag import topic_tags
+
 
 class Topic(Base):
     """
@@ -44,4 +47,11 @@ class Topic(Base):
         primaryjoin=id == related_topics_association.c.topic_id,
         secondaryjoin=id == related_topics_association.c.related_topic_id,
         backref="related_by",
+    )
+
+    # Quan hệ N-N: Topic có nhiều Tags
+    tags = relationship(
+        "Tag",
+        secondary=topic_tags,
+        back_populates="topics"
     )
