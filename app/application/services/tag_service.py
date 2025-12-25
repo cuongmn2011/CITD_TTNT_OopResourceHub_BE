@@ -1,13 +1,16 @@
 from typing import List
 from fastapi import HTTPException, status
-from app.infrastructure.repositories.tag_repository import TagRepository
+from app.application.interfaces.tag_repository_interface import ITagRepository
 from app.domain.schemas.tag_schema import TagCreate, TagUpdate, TagResponse, TagWithTopics
 
 
 class TagService:
-    """Service xử lý business logic cho Tags"""
+    """
+    Service xử lý business logic cho Tags.
+    Áp dụng Dependency Inversion: phụ thuộc vào ITagRepository interface.
+    """
 
-    def __init__(self, tag_repo: TagRepository):
+    def __init__(self, tag_repo: ITagRepository):
         self.tag_repo = tag_repo
 
     def get_all_tags(self, skip: int = 0, limit: int = 100) -> List[TagResponse]:

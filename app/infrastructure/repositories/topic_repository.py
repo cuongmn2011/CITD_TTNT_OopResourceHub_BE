@@ -57,8 +57,9 @@ class TopicRepository(ITopicRepository):
             .all()
     
     def get_by_category(self, category_id: int, skip: int = 0, limit: int = 100) -> List[Topic]:
-        """Lấy danh sách topics theo category (không load sections để tăng tốc)"""
+        """Lấy danh sách topics theo category (load tags cho filtering, không load sections)"""
         return self.db.query(Topic)\
+            .options(joinedload(Topic.tags))\
             .filter(Topic.category_id == category_id)\
             .offset(skip)\
             .limit(limit)\
