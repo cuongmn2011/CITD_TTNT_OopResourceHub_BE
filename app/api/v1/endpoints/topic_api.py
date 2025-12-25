@@ -27,6 +27,7 @@ def get_topic_service(db: Session = Depends(get_db)) -> TopicService:
     return TopicService(topic_repo)
 
 
+@router.get("/{topic_id}/", response_model=TopicResponse, include_in_schema=False)
 @router.get("/{topic_id}", response_model=TopicResponse)
 def get_topic(topic_id: int, service: TopicService = Depends(get_topic_service)):
     """Lấy thông tin chi tiết một topic"""
@@ -48,6 +49,7 @@ def get_topic(topic_id: int, service: TopicService = Depends(get_topic_service))
 
 
 @router.get("/", response_model=List[TopicListItem])
+@router.get("", response_model=List[TopicListItem], include_in_schema=False)
 def get_topics(
     category_id: int = Query(None, description="Filter topics by category ID"),
     skip: int = 0, 
@@ -69,6 +71,7 @@ def get_topics(
 
 
 @router.post("/", response_model=TopicResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TopicResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_topic(
     topic_in: TopicCreate, service: TopicService = Depends(get_topic_service)
 ):
@@ -86,6 +89,7 @@ def create_topic(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.put("/{topic_id}/", response_model=TopicResponse, include_in_schema=False)
 @router.put("/{topic_id}", response_model=TopicResponse)
 def update_topic(
     topic_id: int,
@@ -110,7 +114,8 @@ def update_topic(
         )
 
 
-@router.delete("/{topic_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{topic_id}/", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{topic_id}", status_code=status.HTTP_204_NO_CONTENT, include_in_schema=False)
 def delete_topic(topic_id: int, service: TopicService = Depends(get_topic_service)):
     """Xóa topic"""
     try:
@@ -131,6 +136,7 @@ def delete_topic(topic_id: int, service: TopicService = Depends(get_topic_servic
 
 
 @router.get("/{topic_id}/related", response_model=List[RelatedTopicResponse])
+@router.get("/{topic_id}/related/", response_model=List[RelatedTopicResponse], include_in_schema=False)
 async def get_related_topics(
     topic_id: int,
     top_n: int = Query(

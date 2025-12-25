@@ -17,6 +17,7 @@ def get_tag_service(db: Session = Depends(get_db)) -> TagService:
 
 
 @router.get("/", response_model=List[TagResponse])
+@router.get("", response_model=List[TagResponse], include_in_schema=False)
 def get_all_tags(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -32,6 +33,7 @@ def get_all_tags(
 
 
 @router.get("/popular", response_model=List[TagResponse])
+@router.get("/popular/", response_model=List[TagResponse], include_in_schema=False)
 def get_popular_tags(
     limit: int = Query(10, ge=1, le=50, description="Số lượng tags phổ biến"),
     service: TagService = Depends(get_tag_service)
@@ -47,6 +49,7 @@ def get_popular_tags(
     return service.get_popular_tags(limit)
 
 
+@router.get("/{tag_id}/", response_model=TagWithTopics, include_in_schema=False)
 @router.get("/{tag_id}", response_model=TagWithTopics)
 def get_tag_by_id(
     tag_id: int,
@@ -59,6 +62,7 @@ def get_tag_by_id(
 
 
 @router.post("/", response_model=TagResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TagResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_tag(
     tag_data: TagCreate,
     service: TagService = Depends(get_tag_service)
@@ -74,6 +78,7 @@ def create_tag(
 
 
 @router.put("/{tag_id}", response_model=TagResponse)
+@router.put("/{tag_id}/", response_model=TagResponse, include_in_schema=False)
 def update_tag(
     tag_id: int,
     tag_data: TagUpdate,
@@ -84,6 +89,7 @@ def update_tag(
 
 
 @router.delete("/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{tag_id}/", status_code=status.HTTP_204_NO_CONTENT, include_in_schema=False)
 def delete_tag(
     tag_id: int,
     service: TagService = Depends(get_tag_service)
