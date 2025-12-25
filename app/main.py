@@ -1,6 +1,7 @@
 import os
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.endpoints import category_api, section_api, topic_api, search_api, tag_api, related_topic_association
 from app.infrastructure.database import Base, engine
@@ -15,6 +16,19 @@ else:
     print(f"[{ENVIRONMENT}] Skipping auto table creation")
 
 app = FastAPI(title="OOP Resource Hub API")
+
+# CORS Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://citd-ttnt-oop-resource-hub-fe.vercel.app"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Đăng ký Router
 app.include_router(topic_api.router, prefix="/api/v1/topics", tags=["Topics"])

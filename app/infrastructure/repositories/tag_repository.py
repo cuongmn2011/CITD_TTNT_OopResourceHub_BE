@@ -1,11 +1,15 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
+from app.application.interfaces.tag_repository_interface import ITagRepository
 from app.domain.models.tag import Tag
 from app.domain.schemas.tag_schema import TagCreate, TagUpdate
 
 
-class TagRepository:
-    """Repository cho Tag operations"""
+class TagRepository(ITagRepository):
+    """
+    Repository cho Tag operations.
+    Implements ITagRepository interface.
+    """
 
     def __init__(self, db: Session):
         self.db = db

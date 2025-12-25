@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from app.application.interfaces.topic_repository_interface import ITopicRepository
 from app.application.services.related_topic_service import RelatedTopicService
-from app.domain.schemas.topic_schema import TopicCreate, TopicResponse
+from app.domain.schemas.topic_schema import TopicCreate, TopicResponse, TopicListItem
 
 
 class TopicService:
@@ -53,13 +53,13 @@ class TopicService:
                 continue
         return result
     
-    def get_topics_by_category(self, category_id: int, skip: int = 0, limit: int = 100) -> List[TopicResponse]:
-        """Lấy danh sách topics theo category (lightweight)"""
+    def get_topics_by_category(self, category_id: int, skip: int = 0, limit: int = 100) -> List[TopicListItem]:
+        """Lấy danh sách topics theo category (lightweight - không load sections)"""
         topics = self.topic_repo.get_by_category(category_id, skip, limit)
         result = []
         for topic in topics:
             try:
-                result.append(TopicResponse.model_validate(topic))
+                result.append(TopicListItem.model_validate(topic))
             except Exception as e:
                 print(f"Warning: Failed to validate topic {topic.id}: {str(e)}")
                 continue

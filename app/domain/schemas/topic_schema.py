@@ -14,9 +14,10 @@ class TopicCreate(TopicBase):
     tag_ids: List[int] = []  # Danh sách tag IDs khi tạo topic
 
 class TopicListItem(TopicBase):
-    """Lightweight schema for topic list - no sections/tags"""
+    """Lightweight schema for topic list - includes tags but no sections"""
     id: int
     created_at: datetime
+    tags: List['TagResponse'] = []  # Include tags for filtering and display
 
     class Config:
         from_attributes = True
