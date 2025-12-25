@@ -17,15 +17,11 @@ else:
 
 app = FastAPI(title="OOP Resource Hub API")
 
-# CORS Configuration
+# CORS Configuration - Allow all origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://citd-ttnt-oop-resource-hub-fe.vercel.app"
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,  # Must be False when allow_origins=["*"]
     allow_methods=["*"],
     allow_headers=["*"],
 )
