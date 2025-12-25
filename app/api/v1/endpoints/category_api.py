@@ -39,6 +39,7 @@ def create_category(
         )
 
 @router.get("/{category_id}", response_model=CategoryResponse)
+@router.get("/{category_id}/", response_model=CategoryResponse, include_in_schema=False)
 def get_category(
     category_id: int, 
     service: CategoryService = Depends(get_category_service)
@@ -76,6 +77,7 @@ def get_categories(
         )
 
 @router.put("/{category_id}", response_model=CategoryResponse)
+@router.put("/{category_id}/", response_model=CategoryResponse, include_in_schema=False)
 def update_category(
     category_id: int,
     category_in: CategoryUpdate,
@@ -99,6 +101,7 @@ def update_category(
         )
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{category_id}/", status_code=status.HTTP_204_NO_CONTENT, include_in_schema=False)
 def delete_category(
     category_id: int,
     service: CategoryService = Depends(get_category_service)

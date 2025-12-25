@@ -14,6 +14,7 @@ def get_search_service(db: Session = Depends(get_db)) -> SearchService:
 
 
 @router.get("/", response_model=SearchResponse)
+@router.get("", response_model=SearchResponse, include_in_schema=False)
 def search(
     q: str = Query(..., min_length=1, description="Từ khóa tìm kiếm"),
     limit: int = Query(20, ge=1, le=50, description="Số lượng kết quả tối đa cho mỗi loại"),

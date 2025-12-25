@@ -17,11 +17,22 @@ else:
 
 app = FastAPI(title="OOP Resource Hub API")
 
-# CORS Configuration - Allow all origins
+# CORS Configuration
+# Allow specific origins for credentials support
+allowed_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://citd-ttnt-oop-resource-hub-fe.vercel.app",
+]
+
+# Add regex pattern to allow all Vercel preview deployments
+allow_origin_regex = r"https://.*\.vercel\.app"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,  # Must be False when allow_origins=["*"]
+    allow_origins=allowed_origins,
+    allow_origin_regex=allow_origin_regex,  # This supports wildcard patterns
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
