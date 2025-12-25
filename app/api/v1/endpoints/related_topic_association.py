@@ -47,6 +47,7 @@ def create_relation(
 
 
 @router.get("/{topic_id}", response_model=List[TopicResponse])
+@router.get("/{topic_id}/", response_model=List[TopicResponse], include_in_schema=False)
 def list_related_topics(
     topic_id: int,
     service: RelatedTopicAssociationService = Depends(get_related_service),
@@ -65,6 +66,12 @@ def list_related_topics(
     response_model=RelatedTopicLinkResponse,
     status_code=status.HTTP_201_CREATED,
 )
+@router.post(
+    "/{topic_id}/",
+    response_model=RelatedTopicLinkResponse,
+    status_code=status.HTTP_201_CREATED,
+    include_in_schema=False
+)
 def create_relation_for_topic(
     topic_id: int,
     payload: RelatedTopicIdPayload,
@@ -79,6 +86,7 @@ def create_relation_for_topic(
 
 
 @router.delete("/{topic_id}/{related_topic_id}", status_code=status.HTTP_200_OK)
+@router.delete("/{topic_id}/{related_topic_id}/", status_code=status.HTTP_200_OK, include_in_schema=False)
 def delete_relation_for_topic(
     topic_id: int,
     related_topic_id: int,
@@ -96,6 +104,11 @@ def delete_relation_for_topic(
 @router.put(
     "/{topic_id}/{related_topic_id}",
     response_model=RelatedTopicLinkResponse,
+)
+@router.put(
+    "/{topic_id}/{related_topic_id}/",
+    response_model=RelatedTopicLinkResponse,
+    include_in_schema=False
 )
 def update_relation_for_topic(
     topic_id: int,

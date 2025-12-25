@@ -20,6 +20,7 @@ def get_section_service(db: Session = Depends(get_db)) -> SectionService:
     return SectionService(section_repository, topic_repository)
 
 @router.post("/", response_model=SectionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=SectionResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_section(
     section_data: SectionCreate,
     service: SectionService = Depends(get_section_service)
@@ -84,6 +85,7 @@ def get_sections_by_topic(
         )
 
 @router.get("/{section_id}", response_model=SectionResponse)
+@router.get("/{section_id}/", response_model=SectionResponse, include_in_schema=False)
 def get_section_by_id(
     section_id: int,
     service: SectionService = Depends(get_section_service)
@@ -104,6 +106,7 @@ def get_section_by_id(
         )
 
 @router.put("/{section_id}", response_model=SectionResponse)
+@router.put("/{section_id}/", response_model=SectionResponse, include_in_schema=False)
 def update_section(
     section_id: int,
     section_data: SectionUpdate,
@@ -133,6 +136,7 @@ def update_section(
         )
 
 @router.delete("/{section_id}", status_code=status.HTTP_200_OK)
+@router.delete("/{section_id}/", status_code=status.HTTP_200_OK, include_in_schema=False)
 def delete_section(
     section_id: int,
     service: SectionService = Depends(get_section_service)
