@@ -9,8 +9,10 @@ OopResourceHub is a dedicated web application designed to help students and deve
 - **Database**: PostgreSQL (Neon Database)
 - **Validation**: Pydantic v2 (type-safe schemas)
 - **Server**: Uvicorn (ASGI server)
+- **CORS**: Configured for cross-origin requests (localhost:3000)
 - **Architecture**: Clean Architecture with DIP (Dependency Inversion Principle)
-- **Deployment**: Google Cloud Run (containerized deployment)
+- **Deployment**: Google Cloud Run (asia-southeast1)
+- **Production URL**: https://oopresourcehub-api-669515337272.asia-southeast1.run.app
 
 ## 📦 Installation
 
@@ -104,17 +106,22 @@ app/
 ├── api/                           # API endpoints layer
 │   └── v1/endpoints/
 │       ├── category_api.py        # Category CRUD APIs
-│       ├── topic_api.py           # Topic CRUD APIs
-│       └── section_api.py         # Section CRUD APIs
+│       ├── topic_api.py           # Topic CRUD APIs (with search & tags)
+│       ├── section_api.py         # Section CRUD APIs
+│       └── related_topic_association.py  # Related topics management
 ├── application/                   # Business logic layer
 │   ├── interfaces/                # Repository interfaces (DIP)
 │   │   ├── category_repository_interface.py
 │   │   ├── topic_repository_interface.py
-│   │   └── section_repository_interface.py
+│   │   ├── section_repository_interface.py
+│   │   ├── tag_repository_interface.py
+│   │   └── related_topic_association_repository_interface.py
 │   └── services/                  # Service layer
 │       ├── category_service.py
-│       ├── topic_service.py
-│       └── section_service.py
+│       ├── topic_service.py       # With fuzzy search & tag handling
+│       ├── section_service.py
+│       ├── related_topic_service.py
+│       └── related_topic_association_service.py
 ├── core/                          # Core application layer
 │   ├── __init__.py                # Core exports
 │   ├── settings.py                # App configuration & environment variables
@@ -124,20 +131,23 @@ app/
 │   ├── models/                    # SQLAlchemy ORM models
 │   │   ├── __init__.py            # Model exports
 │   │   ├── category.py            # Category entity
-│   │   ├── topic.py               # Topic entity + related_topics
+│   │   ├── topic.py               # Topic entity with tags & related_topics
 │   │   └── section.py             # Section entity
 │   └── schemas/                   # Pydantic DTOs
 │       ├── category_schema.py     # Category request/response schemas
-│       ├── topic_schema.py        # Topic request/response schemas
-│       └── section_schema.py      # Section request/response schemas
+│       ├── topic_schema.py        # Topic schemas (TopicListItem, TopicResponse)
+│       ├── section_schema.py      # Section request/response schemas
+│       └── related_topic_association_schema.py  # Related topic schemas
 └── infrastructure/                # External services & data access
     ├── database/                  # Database configuration
     │   ├── __init__.py            # Database exports
     │   └── connection.py          # SQLAlchemy engine, session & Base
     └── repositories/              # Data access layer (SQLAlchemy)
         ├── category_repository.py
-        ├── topic_repository.py
-        └── section_repository.py
+        ├── topic_repository.py    # With eager loading for tags
+        ├── section_repository.py
+        ├── tag_repository.py      # Tag CRUD operations
+        └── related_topic_association_repository.py
 ```
 
 ### Architecture Principles
@@ -157,11 +167,18 @@ app/
 
 ## ✨ Key Features
 
-- **RESTful API** with full CRUD operations
-- **Clean Architecture** with clear separation of concerns
-- **Dependency Inversion** using repository interfaces
+- **RESTful API** with full CRUD operations for categories, topics, sections, tags, and related topics
+- **Advanced Search** with fuzzy matching support (Levenshtein distance) for Vietnamese content
+- **Tag System** for topic categorization and filtering
+- **Related Topics** management with bidirectional associations
+- **Optimized Performance**:
+  - Lightweight `TopicListItem` schema for list endpoints (excludes sections)
+  - Full `TopicResponse` schema for detail endpoints (includes sections)
+  - Eager loading with `joinedload()` for tags to prevent N+1 queries
+- **Clean Architecture** with clear separation of concerns across 5 layers
+- **Dependency Inversion Principle** - all repositories implement interfaces
+- **CORS Configuration** for cross-origin requests (localhost:3000, 127.0.0.1:3000)
 - **Comprehensive Error Handling** with detailed error messages
-- **Eager Loading** for optimized database queries (joinedload)
 - **Input Validation** using Pydantic v2 schemas
 - **Auto-generated API Documentation** (Swagger UI & ReDoc)
 - **Environment-based Configuration** (development/production)
@@ -180,20 +197,37 @@ app/
 | GET | `/api/v1/categories/slug/{slug}` | Get category by slug |
 | PUT | `/api/v1/categories/{id}` | Update category |
 | DELETE | `/api/v1/categories/{id}` | Delete category |
-
-### Topics
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/topics/` | Create new topic |
-| GET | `/api/v1/topics/` | Get all topics (paginated) |
-| GET | `/api/v1/topics/{id}` | Get topic by ID |
+?category_id={id}` | **Get topics by category** (returns `TopicListItem` - optimized, no sections) |
+| GET | `/api/v1/topics/?keyword={query}` | **Search topics** (fuzzy matching with Levenshtein distance) |
+| GET | `/api/v1/topics/{id}` | Get topic by ID (returns `TopicResponse` - full details with sections) |
 | PUT | `/api/v1/topics/{id}` | Update topic |
 | DELETE | `/api/v1/topics/{id}` | Delete topic |
+
+**Performance Notes:**
+- List endpoints return `TopicListItem` (id, title, short_definition, category_id, tags, created_at)
+- Detail endpoint returns `TopicResponse` (full topic with sections array)
+- Tags are eagerly loaded with `joinedload()` to prevent N+1 queries
 
 ### Sections
 
 | Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/sections/` | Create new section |
+| GET | `/api/v1/sections/` | Get all sections (paginated) |
+| GET | `/api/v1/sections/{id}` | Get section by ID |
+| GET | `/api/v1/sections/topic/{topic_id}` | Get all sections of a topic |
+| PUT | `/api/v1/sections/{id}` | Update section |
+| DELETE | `/api/v1/sections/{id}` | Delete section |
+
+### Related Topics
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/related-topic-associations/` | Create related topic association (bidirectional) |
+| GET | `/api/v1/related-topic-associations/topic/{topic_id}` | Get all related topics for a topic |
+| DELETE | `/api/v1/related-topic-associations/{id}` | Delete related topic association |
+
+**Note:** Related topic associations are bidirectional - creating A→B also creates B→A automatically.
 |--------|----------|-------------|
 | POST | `/api/v1/sections/` | Create new section |
 | GET | `/api/v1/sections/` | Get all sections (paginated) |
@@ -233,17 +267,27 @@ app/
    .\deploy.ps1
    ```
    
-   **Linux/Mac:**
-   ```bash
-   bash deploy.sh
-   ```
+   **Production URL:** https://oopresourcehub-api-669515337272.asia-southeast1.run.app
    
-   Or deploy manually:
    ```bash
-   gcloud run deploy oopresourcehub-api \
-     --source . \
+   # Get service URL using gcloud CLI
+   gcloud run services list --region asia-southeast1
+   
+   # Or describe specific service
+   gcloud run services describe oopresourcehub-api \
      --region asia-southeast1 \
-     --allow-unauthenticated \
+     --format='value(status.url)'
+   ```
+
+**Important Notes:**
+- **Current deployment**: asia-southeast1 region
+- **Service name**: oopresourcehub-api
+- **Last deployed**: December 24, 2025 by cuongmn2011@gmail.com
+- Database tables are automatically created on first startup
+- Use Neon PostgreSQL for production database
+- `deploy.ps1` and `deploy.sh` files contain your database credentials and are git-ignored
+- See `DEPLOY_MANUAL.md` for detailed deployment instructions
+- CORS is configured to allow requests from frontend (localhost:3000 for development)
      --port 8000 \
      --set-env-vars ENVIRONMENT=production,DATABASE_URL="your_neon_database_url"
    ```
