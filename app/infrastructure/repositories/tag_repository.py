@@ -29,7 +29,13 @@ class TagRepository(ITagRepository):
     def get_by_name(self, name: str) -> Optional[Tag]:
         """Lấy tag theo name"""
         return self.db.query(Tag).filter(Tag.name == name).first()
-
+    def search_by_name(self, name: str) -> List[Tag]:
+        """
+        Tìm kiếm tags theo tên (có chứa chuỗi name, không phân biệt hoa thường)
+        Implement phương thức abstract từ ITagRepository
+        """
+        # Sử dụng ilike để tìm kiếm gần đúng và không phân biệt hoa thường
+        return self.db.query(Tag).filter(Tag.name.ilike(f"%{name}%")).all()
     def create(self, tag_data: TagCreate) -> Tag:
         """Tạo tag mới"""
         tag = Tag(**tag_data.model_dump())
