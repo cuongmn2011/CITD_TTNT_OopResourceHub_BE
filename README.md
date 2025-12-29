@@ -106,9 +106,11 @@ app/
 ├── api/                           # API endpoints layer
 │   └── v1/endpoints/
 │       ├── category_api.py        # Category CRUD APIs
-│       ├── topic_api.py           # Topic CRUD APIs (with search & tags)
+│       ├── topic_api.py           # Topic CRUD APIs (with TF-IDF related topics)
 │       ├── section_api.py         # Section CRUD APIs
-│       └── related_topic_association.py  # Related topics management
+│       ├── related_topic_association.py  # Manual related topics management
+│       ├── tag_api.py             # Tag CRUD APIs
+│       └── search_api.py          # Unified search API
 ├── application/                   # Business logic layer
 │   ├── interfaces/                # Repository interfaces (DIP)
 │   │   ├── category_repository_interface.py
@@ -168,16 +170,20 @@ app/
 ## ✨ Key Features
 
 - **RESTful API** with full CRUD operations for categories, topics, sections, tags, and related topics
-- **Advanced Search** with fuzzy matching support (Levenshtein distance) for Vietnamese content
-- **Tag System** for topic categorization and filtering
-- **Related Topics** management with bidirectional associations
+- **Unified Search** with fuzzy matching support for Vietnamese content (topics, sections, categories)
+- **Tag System** for topic categorization and filtering with popular tags endpoint
+- **Related Topics** with two approaches:
+  - **Manual Relationships**: Curated by admin/user, stored in database (fast, accurate)
+  - **Automatic Discovery**: TF-IDF + Heuristic algorithm for content-based similarity (no setup required)
 - **Optimized Performance**:
   - Lightweight `TopicListItem` schema for list endpoints (excludes sections)
-  - Full `TopicResponse` schema for detail endpoints (includes sections)
+  - Full `TopicResponse` schema for detail endpoints (includes sections & tags)
   - Eager loading with `joinedload()` for tags to prevent N+1 queries
+  - Minimal data loading for TF-IDF calculations
 - **Clean Architecture** with clear separation of concerns across 5 layers
 - **Dependency Inversion Principle** - all repositories implement interfaces
-- **CORS Configuration** for cross-origin requests (localhost:3000, 127.0.0.1:3000)
+- **Comprehensive Logging** with DEBUG level logs for API flow tracking (see `LOGGING_GUIDE_RELATED_TOPICS.md`)
+- **CORS Configuration** for cross-origin requests (localhost:3000, Vercel deployments)
 - **Comprehensive Error Handling** with detailed error messages
 - **Input Validation** using Pydantic v2 schemas
 - **Auto-generated API Documentation** (Swagger UI & ReDoc)
@@ -194,19 +200,26 @@ app/
 | POST | `/api/v1/categories/` | Create new category |
 | GET | `/api/v1/categories/` | Get all categories (paginated) |
 | GET | `/api/v1/categories/{id}` | Get category by ID |
-| GET | `/api/v1/categories/slug/{slug}` | Get category by slug |
 | PUT | `/api/v1/categories/{id}` | Update category |
 | DELETE | `/api/v1/categories/{id}` | Delete category |
-?category_id={id}` | **Get topics by category** (returns `TopicListItem` - optimized, no sections) |
-| GET | `/api/v1/topics/?keyword={query}` | **Search topics** (fuzzy matching with Levenshtein distance) |
-| GET | `/api/v1/topics/{id}` | Get topic by ID (returns `TopicResponse` - full details with sections) |
+
+### Topics
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/topics/` | Create new topic |
+| GET | `/api/v1/topics/` | Get all topics (paginated) |
+| GET | `/api/v1/topics/?category_id={id}` | **Get topics by category** (returns `TopicListItem` - optimized, no sections) |
+| GET | `/api/v1/topics/{id}` | Get topic by ID (returns `TopicResponse` - full details with sections & tags) |
+| GET | `/api/v1/topics/{id}/related?top_n=5` | **Find related topics** (TF-IDF algorithm, returns topics with scores) |
 | PUT | `/api/v1/topics/{id}` | Update topic |
 | DELETE | `/api/v1/topics/{id}` | Delete topic |
 
 **Performance Notes:**
 - List endpoints return `TopicListItem` (id, title, short_definition, category_id, tags, created_at)
-- Detail endpoint returns `TopicResponse` (full topic with sections array)
+- Detail endpoint returns `TopicResponse` (full topic with sections array and tags)
 - Tags are eagerly loaded with `joinedload()` to prevent N+1 queries
+- Related topics endpoint uses TF-IDF algorithm (slower but provides content-based recommendations)
 
 ### Sections
 
@@ -221,20 +234,53 @@ app/
 
 ### Related Topics
 
+**Manual Relationships** (Curated by admin/user):
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/related-topic-associations/` | Create related topic association (bidirectional) |
-| GET | `/api/v1/related-topic-associations/topic/{topic_id}` | Get all related topics for a topic |
-| DELETE | `/api/v1/related-topic-associations/{id}` | Delete related topic association |
+| POST | `/api/v1/related-topics/` | Create related topic association (bidirectional) |
+| POST | `/api/v1/related-topics/{topic_id}` | Create relation for specific topic |
+| GET | `/api/v1/related-topics/{topic_id}` | Get manually created related topics |
+| PUT | `/api/v1/related-topics/{topic_id}/{related_topic_id}` | Update relation |
+| DELETE | `/api/v1/related-topics/{topic_id}/{related_topic_id}` | Delete relation |
 
 **Note:** Related topic associations are bidirectional - creating A→B also creates B→A automatically.
+
+**Automatic Discovery** (TF-IDF Algorithm):
+
+| Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/sections/` | Create new section |
-| GET | `/api/v1/sections/` | Get all sections (paginated) |
-| GET | `/api/v1/sections/{id}` | Get section by ID |
-| GET | `/api/v1/sections/topic/{topic_id}` | Get all sections of a topic |
-| PUT | `/api/v1/sections/{id}` | Update section |
-| DELETE | `/api/v1/sections/{id}` | Delete section |
+| GET | `/api/v1/topics/{topic_id}/related?top_n=5` | Find related topics using TF-IDF + Heuristic scoring |
+
+**Differences:**
+- **Manual API** (`/api/v1/related-topics/{topic_id}`): Fast, curated relationships stored in database
+- **Automatic API** (`/api/v1/topics/{topic_id}/related`): Uses ML algorithm (TF-IDF) to automatically discover related topics based on content similarity
+
+See `.docs/ALGORITHM_RELATED_TOPICS_DOCS.md` for detailed algorithm documentation.
+
+### Tags
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/tags/` | Get all tags (paginated) |
+| GET | `/api/v1/tags/popular?limit=10` | Get popular tags (most used) |
+| GET | `/api/v1/tags/{tag_id}` | Get tag by ID (with associated topics) |
+| POST | `/api/v1/tags/` | Create new tag |
+| PUT | `/api/v1/tags/{tag_id}` | Update tag |
+| DELETE | `/api/v1/tags/{tag_id}` | Delete tag |
+
+**Note:** Tags are used for topic categorization and filtering. Deleting a tag removes the association but doesn't delete the topics.
+
+### Search
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/search/?q={query}&limit=20&tags=1,2,3` | Unified search across topics, sections, and categories |
+
+**Features:**
+- **Fuzzy Matching**: Supports approximate search (ignores Vietnamese accents)
+- **Tag Filtering**: Optional tag filtering with comma-separated IDs
+- **Scoring**: Results ranked by relevance (exact match > starts with > contains > fuzzy)
 
 ## 🚢 Deployment
 
@@ -279,19 +325,6 @@ app/
      --format='value(status.url)'
    ```
 
-**Important Notes:**
-- **Current deployment**: asia-southeast1 region
-- **Service name**: oopresourcehub-api
-- **Last deployed**: December 24, 2025 by cuongmn2011@gmail.com
-- Database tables are automatically created on first startup
-- Use Neon PostgreSQL for production database
-- `deploy.ps1` and `deploy.sh` files contain your database credentials and are git-ignored
-- See `DEPLOY_MANUAL.md` for detailed deployment instructions
-- CORS is configured to allow requests from frontend (localhost:3000 for development)
-     --port 8000 \
-     --set-env-vars ENVIRONMENT=production,DATABASE_URL="your_neon_database_url"
-   ```
-
 3. **Access your deployed API:**
    ```bash
    # Get service URL
@@ -301,10 +334,13 @@ app/
    ```
 
 **Important Notes:**
+- **Current deployment**: asia-southeast1 region
+- **Service name**: oopresourcehub-api
 - Database tables are automatically created on first startup
 - Use Neon PostgreSQL for production database
 - `deploy.ps1` and `deploy.sh` files contain your database credentials and are git-ignored
 - See `DEPLOY_MANUAL.md` for detailed deployment instructions
+- CORS is configured to allow requests from frontend (localhost:3000 for development, Vercel deployments)
 
 ### Database Setup
 
@@ -385,6 +421,15 @@ DATABASE_URL=postgresql://user:password@/dbname?host=/cloudsql/project:region:in
 3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to branch (`git push origin feature/AmazingFeature`)
 5. Open Pull Request
+
+## 📚 Documentation
+
+Additional documentation files:
+
+- **API Flow Documentation**: `API_FLOW_RELATED_TOPICS.md` - Detailed step-by-step flow for related topics API
+- **Logging Guide**: `LOGGING_GUIDE_RELATED_TOPICS.md` - How to read and debug logs for related topics endpoints
+- **Algorithm Documentation**: `.docs/ALGORITHM_RELATED_TOPICS_DOCS.md` - TF-IDF + Heuristic algorithm details
+- **Deployment Manual**: `DEPLOY_MANUAL.md` - Detailed deployment instructions
 
 ## 📄 License
 
